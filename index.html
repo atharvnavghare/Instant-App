@@ -97,12 +97,17 @@ function ProductCard({ p, onAdd, added }) {
   );
 }
 
+const WHATSAPP_NUMBER = "919834976390";
+const UPI_ID = "9834976390-1@fam";
+const UPI_NAME = "INSTANT";
+
 function InstantApp() {
   const [category, setCategory] = useState("all");
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [justAdded, setJustAdded] = useState(null);
   const [tab, setTab] = useState("home");
+  const [payMethod, setPayMethod] = useState("cod");
 
   const filtered = useMemo(() => (category === "all" ? PRODUCTS : PRODUCTS.filter((p) => p.cat === category)), [category]);
   const trending = PRODUCTS.filter((p) => p.trending);
@@ -116,6 +121,16 @@ function InstantApp() {
 
   const total = cart.reduce((s, p) => s + p.price, 0);
 
+  const upiUri = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${total}&cu=INR`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUri)}`;
+
+  function confirmOrder() {
+    const lines = cart.map((p) => `- ${p.name} (₹${p.price})`).join("%0A");
+    const method = payMethod === "upi" ? "UPI (paid via QR to " + UPI_ID + ")" : "Cash on Delivery";
+    const msg = `Hi INSTANT! New order from Hinganghat%0A%0A${lines}%0A%0ATotal: ₹${total}%0APayment: ${method}%0A%0AMy name & address:`;
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
+  }
+
   return (
     <div className="w-full min-h-screen flex items-center justify-center py-6" style={{ background: "#DAD4C2", fontFamily: "'Work Sans', sans-serif" }}>
       <div className="relative overflow-hidden flex flex-col" style={{
@@ -125,7 +140,7 @@ function InstantApp() {
           <div className="ticker-track flex items-center gap-8 whitespace-nowrap">
             {[0, 1].map((i) => (
               <span key={i} style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: GREEN }} className="flex items-center gap-8">
-                <span>🔥 LIVE IN YOUR CITY</span>
+                <span>🔥 LIVE IN HINGANGHAT</span>
                 <span style={{ color: ORANGE }}>● 42 SOLD TODAY</span>
                 <span style={{ color: PAPER }}>OVERSIZED TEE ₹399</span>
                 <span style={{ color: PAPER }}>BAGGY CARGO ₹699</span>
@@ -141,7 +156,7 @@ function InstantApp() {
             <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: ORANGE, fontWeight: 700 }}>MEN'S FASHION, INSTANTLY.</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 px-2 py-1" style={{ border: `1px dashed ${LINE}`, fontFamily: "'Space Mono', monospace", fontSize: 10 }}>📍 YOUR CITY</div>
+            <div className="flex items-center gap-1 px-2 py-1" style={{ border: `1px dashed ${LINE}`, fontFamily: "'Space Mono', monospace", fontSize: 10 }}>📍 HINGANGHAT</div>
             <button onClick={() => setCartOpen(true)} className="relative" style={{ fontSize: 20 }}>
               🛍
               {cart.length > 0 && (
@@ -186,6 +201,93 @@ function InstantApp() {
             <div className="flex items-center gap-2 mb-2 pb-1" style={{ borderBottom: `1px dashed ${LINE}` }}>
               <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: INK }}>
                 {category === "all" ? "All Products" : CATEGORIES.find((c) => c.id === category)?.label}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {filtered.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} />)}
+            </div>
+          </div>
+        </div>
+
+        <div className="shrink-0 flex items-center justify-around py-2.5" style={{ borderTop: `1.5px solid ${INK}`, background: PAPER }}>
+          {[
+            { id: "home", icon: "🏠", label: "Home" },
+            { id: "trending", icon: "📈", label: "Trending" },
+            { id: "search", icon: "🔍", label: "Search" },
+            { id: "profile", icon: "👤", label: "Profile" },
+          ].map((t) => (
+            <button key={t.id} onClick={() => setTab(t.id)} className="flex flex-col items-center gap-0.5" style={{ color: tab === t.id ? ORANGE : INK }}>
+              <span style={{ fontSize: 18 }}>{t.icon}</span>
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9 }}>{t.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {cartOpen && (
+          <div className="absolute inset-0 flex flex-col justify-end" style={{ background: "rgba(23,20,16,0.5)" }}>
+            <div className="flex flex-col" style={{ background: PAPER, borderTop: `2px solid ${INK}`, maxHeight: "70%", borderRadius: "18px 18px 0 0" }}>
+              <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px dashed ${LINE}` }}>
+                <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 16, color: INK }}>YOUR BAG</span>
+                <button onClick={() => setCartOpen(false)} style={{ fontSize: 18, color: INK }}>✕</button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-4 py-2">
+                {cart.length === 0 ? (
+                  <p className="py-8 text-center" style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK, opacity: 0.6 }}>Bag is empty. Add something trending.</p>
+                ) : (
+                  cart.map((p, i) => (
+                    <div key={i} className="flex items-center justify-between py-2" style={{ borderBottom: `1px dashed ${LINE}` }}>
+                      <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 13, color: INK, fontWeight: 600 }}>{p.name}</span>
+                      <PriceTag value={p.price} />
+                    </div>
+                  ))
+                )}
+              </div>
+              {cart.length > 0 && (
+                <div className="px-4 py-3 overflow-y-auto" style={{ borderTop: `1px solid ${LINE}` }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: INK }}>TOTAL</span>
+                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: ORANGE }}>₹{total}</span>
+                  </div>
+
+                  <div className="flex gap-2 mb-3">
+                    <button onClick={() => setPayMethod("cod")} className="flex-1 py-2" style={{
+                      background: payMethod === "cod" ? NAVY : "transparent", color: payMethod === "cod" ? PAPER : INK,
+                      border: `1.5px solid ${payMethod === "cod" ? NAVY : LINE}`, fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
+                    }}>💵 CASH ON DELIVERY</button>
+                    <button onClick={() => setPayMethod("upi")} className="flex-1 py-2" style={{
+                      background: payMethod === "upi" ? NAVY : "transparent", color: payMethod === "upi" ? PAPER : INK,
+                      border: `1.5px solid ${payMethod === "upi" ? NAVY : LINE}`, fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
+                    }}>📱 PAY VIA UPI</button>
+                  </div>
+
+                  {payMethod === "upi" && (
+                    <div className="flex flex-col items-center gap-1.5 mb-3 py-3" style={{ border: `1px dashed ${LINE}`, background: "#fff" }}>
+                      <img src={qrUrl} alt="UPI QR Code" width="150" height="150" />
+                      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: INK, fontWeight: 700 }}>{UPI_ID}</span>
+                      <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 10.5, color: INK, opacity: 0.7, textAlign: "center", padding: "0 8px" }}>
+                        Scan &amp; pay ₹{total}, then confirm order below
+                      </span>
+                    </div>
+                  )}
+
+                  <button onClick={confirmOrder} className="w-full py-3" style={{ background: INK, color: PAPER, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 13 }}>
+                    CONFIRM ORDER VIA WHATSAPP
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<InstantApp />);
+</script>
+</body>
+</html>
+all" ? "All Products" : CATEGORIES.find((c) => c.id === category)?.label}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-3">
