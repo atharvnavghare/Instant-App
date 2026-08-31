@@ -164,13 +164,39 @@ function InstantApp() {
   }
 
   const [orderCount, setOrderCount] = useState(0);
-  const [orderPlaced, setOrderPlaced] = useState(false);
-  const [orderId, setOrderId] = useState(null);
+  const [orderPlaced, setOrderPlaced] = useState(false);  const [orderId, setOrderId] = useState(null);
   const [orderItems, setOrderItems] = useState([]);
   const [itemRatings, setItemRatings] = useState({});
   const [ratingsMap, setRatingsMap] = useState({});
   const [ratingsSubmitted, setRatingsSubmitted] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [myOrders, setMyOrders] = useState([]);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("instant_orders") || "[]");
+      setMyOrders(saved);
+    } catch (e) {}
+  }, []);
+
+  function logout() {
+    try { localStorage.removeItem("instant_user"); } catch (e) {}
+    setLoggedIn(false);
+    setLoginStep("details");
+    setLoginName(""); setLoginPhone(""); setOtpInput(""); setGeneratedOtp("");
+    setCustName(""); setCustPhone("");
+    setTab("home");
+  }
+
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase().replace(/^#/, "");
+    if (!q) return [];
+    return PRODUCTS.filter((p) => {
+      const catLabel = (CATEGORIES.find((c) => c.id === p.cat)?.label || "").toLowerCase();
+      return p.name.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q) || catLabel.includes(q);
+    });
+  }, [searchQuery]);
 
   useEffect(() => {
     fetch(`https://api.countapi.xyz/get/${COUNTER_NAMESPACE}/orders`)
@@ -219,14 +245,33 @@ function InstantApp() {
     fetch(`https://api.countapi.xyz/hit/${COUNTER_NAMESPACE}/orders`)
       .then((r) => r.json())
       .then((d) => {
-        setOrderCount(d.value || orderCount + 1);
-        setOrderId(d.value);
+        const id = d.value || orderCount + 1;
+        setOrderCount(id);
+        setOrderId(id);
+        saveOrderToHistory(id, cart, total);
       })
-      .catch(() => setOrderId(orderCount + 1));
+      .catch(() => {
+        const id = orderCount + 1;
+        setOrderId(id);
+        saveOrderToHistory(id, cart, total);
+      });
 
     setOrderItems(cart);
     setOrderPlaced(true);
     setCart([]);
+  }
+
+  function saveOrderToHistory(id, items, orderTotal) {
+    const record = {
+      id, items: items.map((p) => ({ name: p.name, price: p.price })),
+      total: orderTotal, date: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+      address: custAddress,
+    };
+    setMyOrders((prev) => {
+      const next = [record, ...prev];
+      try { localStorage.setItem("instant_orders", JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
   }
 
   function rateProduct(id, stars) {
@@ -374,51 +419,130 @@ function InstantApp() {
         </div>
 
         <div className="flex-1 overflow-y-auto pb-2">
-          <div className="flex gap-2 px-4 pt-3 pb-1 overflow-x-auto">
-            {CATEGORIES.map((c) => (
-              <button key={c.id} onClick={() => setCategory(c.id)} className="shrink-0 flex items-center gap-1 px-3 py-1.5 transition-colors" style={{
-                background: category === c.id ? NAVY : "transparent", color: category === c.id ? PAPER : INK,
-                border: `1.5px solid ${category === c.id ? NAVY : LINE}`, fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
-              }}><span>{c.emoji}</span> {c.label}</button>
-            ))}
-          </div>
+          {tab === "home" && (
+            <>
+              <div className="flex gap-2 px-4 pt-3 pb-1 overflow-x-auto">
+                {CATEGORIES.map((c) => (
+                  <button key={c.id} onClick={() => setCategory(c.id)} className="shrink-0 flex items-center gap-1 px-3 py-1.5 transition-colors" style={{
+                    background: category === c.id ? NAVY : "transparent", color: category === c.id ? PAPER : INK,
+                    border: `1.5px solid ${category === c.id ? NAVY : LINE}`, fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
+                  }}><span>{c.emoji}</span> {c.label}</button>
+                ))}
+              </div>
 
-          <div className="mt-4">
-            <div className="flex items-center gap-1.5 px-4 mb-2">
-              <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: INK }}>🔥 Today's Trending Fits</span>
-            </div>
-            <div className="flex gap-3 px-4 overflow-x-auto pb-2">
-              {trending.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
-            </div>
-          </div>
+              <div className="mt-4">
+                <div className="flex items-center gap-1.5 px-4 mb-2">
+                  <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: INK }}>🔥 Today's Trending Fits</span>
+                </div>
+                <div className="flex gap-3 px-4 overflow-x-auto pb-2">
+                  {trending.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
+                </div>
+              </div>
 
-          <div className="mt-5">
-            <div className="flex items-center justify-between px-4 mb-2">
-              <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: INK }}>Under ₹499</span>
-              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: GREEN, fontWeight: 700 }}>COLLEGE PICKS</span>
-            </div>
-            <div className="flex gap-3 px-4 overflow-x-auto pb-2">
-              {under499.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
-            </div>
-          </div>
+              <div className="mt-5">
+                <div className="flex items-center justify-between px-4 mb-2">
+                  <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: INK }}>Under ₹499</span>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: GREEN, fontWeight: 700 }}>COLLEGE PICKS</span>
+                </div>
+                <div className="flex gap-3 px-4 overflow-x-auto pb-2">
+                  {under499.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
+                </div>
+              </div>
 
-          <div className="mt-5 px-4">
-            <div className="flex items-center gap-2 mb-2 pb-1" style={{ borderBottom: `1px dashed ${LINE}` }}>
-              <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: INK }}>
-                {category === "all" ? "All Products" : CATEGORIES.find((c) => c.id === category)?.label}
-              </span>
+              <div className="mt-5 px-4">
+                <div className="flex items-center gap-2 mb-2 pb-1" style={{ borderBottom: `1px dashed ${LINE}` }}>
+                  <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: INK }}>
+                    {category === "all" ? "All Products" : CATEGORIES.find((c) => c.id === category)?.label}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {filtered.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
+                </div>
+              </div>
+            </>
+          )}
+
+          {tab === "search" && (
+            <div className="px-4 pt-3">
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search — try 'shirt', 'tee', 'shoes'..."
+                className="w-full px-3 py-2.5 mb-3"
+                style={{ border: `1.5px solid ${LINE}`, fontFamily: "'Work Sans', sans-serif", fontSize: 13, background: "#fff", color: INK }}
+              />
+              {searchQuery.trim() === "" ? (
+                <p className="text-center py-10" style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK, opacity: 0.5 }}>
+                  Type to search products
+                </p>
+              ) : searchResults.length === 0 ? (
+                <p className="text-center py-10" style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK, opacity: 0.5 }}>
+                  No products found for "{searchQuery}"
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 pb-2">
+                  {searchResults.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              {filtered.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
+          )}
+
+          {tab === "orders" && (
+            <div className="px-4 pt-3 pb-2">
+              <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: INK }}>Your Orders</span>
+              {myOrders.length === 0 ? (
+                <p className="text-center py-10" style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK, opacity: 0.5 }}>
+                  No orders yet — go place one!
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2 mt-2">
+                  {myOrders.map((o, i) => (
+                    <div key={i} className="px-3 py-2.5" style={{ background: "#fff", border: `1px solid ${LINE}` }}>
+                      <div className="flex items-center justify-between">
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11.5, color: INK, fontWeight: 700 }}>#IN-{o.id}</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: INK, opacity: 0.6 }}>{o.date}</span>
+                      </div>
+                      <p style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 11.5, color: INK, opacity: 0.8, marginTop: 3 }}>
+                        {o.items.map((it) => it.name).join(", ")}
+                      </p>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: GREEN, fontWeight: 700 }}>● Placed · COD</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: ORANGE, fontWeight: 700 }}>₹{o.total}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
+          )}
+
+          {tab === "profile" && (
+            <div className="px-4 pt-4 pb-2 flex flex-col items-center">
+              <div className="flex items-center justify-center" style={{ width: 60, height: 60, borderRadius: "50%", background: NAVY, color: PAPER, fontFamily: "'Archivo Black', sans-serif", fontSize: 22 }}>
+                {custName ? custName.trim()[0].toUpperCase() : "?"}
+              </div>
+              <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 17, color: INK, marginTop: 8 }}>{custName || "—"}</span>
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11.5, color: INK, opacity: 0.7 }}>{custPhone}</span>
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: GREEN, fontWeight: 700, marginTop: 4 }}>📍 HINGANGHAT</span>
+
+              <div className="w-full mt-6 flex flex-col gap-2">
+                <button onClick={() => setTab("orders")} className="w-full flex items-center justify-between px-3 py-3" style={{ background: "#fff", border: `1px solid ${LINE}` }}>
+                  <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 13, color: INK, fontWeight: 600 }}>📦 Your Orders</span>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK, opacity: 0.5 }}>{myOrders.length} →</span>
+                </button>
+                <button onClick={logout} className="w-full py-3" style={{ border: `1.5px solid ${ORANGE}`, background: "transparent", color: ORANGE, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12 }}>
+                  LOG OUT
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="shrink-0 flex items-center justify-around py-2.5" style={{ borderTop: `1.5px solid ${INK}`, background: PAPER }}>
           {[
             { id: "home", icon: "🏠", label: "Home" },
-            { id: "trending", icon: "📈", label: "Trending" },
             { id: "search", icon: "🔍", label: "Search" },
+            { id: "orders", icon: "📦", label: "Orders" },
             { id: "profile", icon: "👤", label: "Profile" },
           ].map((t) => (
             <button key={t.id} onClick={() => setTab(t.id)} className="flex flex-col items-center gap-0.5" style={{ color: tab === t.id ? ORANGE : INK }}>
