@@ -108,6 +108,10 @@ function InstantApp() {
   const [justAdded, setJustAdded] = useState(null);
   const [tab, setTab] = useState("home");
   const [payMethod, setPayMethod] = useState("cod");
+  const [custName, setCustName] = useState("");
+  const [custPhone, setCustPhone] = useState("");
+  const [custAddress, setCustAddress] = useState("");
+  const [formError, setFormError] = useState("");
 
   const filtered = useMemo(() => (category === "all" ? PRODUCTS : PRODUCTS.filter((p) => p.cat === category)), [category]);
   const trending = PRODUCTS.filter((p) => p.trending);
@@ -125,9 +129,14 @@ function InstantApp() {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUri)}`;
 
   function confirmOrder() {
+    if (!custName.trim() || !custPhone.trim() || !custAddress.trim()) {
+      setFormError("Naam, phone number aur address bharna zaroori hai.");
+      return;
+    }
+    setFormError("");
     const lines = cart.map((p) => `- ${p.name} (₹${p.price})`).join("%0A");
     const method = payMethod === "upi" ? "UPI (paid via QR to " + UPI_ID + ")" : "Cash on Delivery";
-    const msg = `Hi INSTANT! New order from Hinganghat%0A%0A${lines}%0A%0ATotal: ₹${total}%0APayment: ${method}%0A%0AMy name & address:`;
+    const msg = `Hi INSTANT! New order from Hinganghat%0A%0A${lines}%0A%0ATotal: ₹${total}%0APayment: ${method}%0A%0AName: ${custName}%0APhone: ${custPhone}%0AAddress: ${custAddress}`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
   }
 
@@ -249,7 +258,36 @@ function InstantApp() {
                     <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: ORANGE }}>₹{total}</span>
                   </div>
 
-                  <div className="flex gap-2 mb-3">
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: INK, opacity: 0.6, fontWeight: 700 }}>DELIVERY DETAILS</span>
+                  <input
+                    value={custName}
+                    onChange={(e) => setCustName(e.target.value)}
+                    placeholder="Full Name"
+                    className="w-full mt-1.5 px-2 py-2"
+                    style={{ border: `1.5px solid ${LINE}`, fontFamily: "'Work Sans', sans-serif", fontSize: 13, background: "#fff", color: INK }}
+                  />
+                  <input
+                    value={custPhone}
+                    onChange={(e) => setCustPhone(e.target.value)}
+                    placeholder="Contact Number"
+                    type="tel"
+                    className="w-full mt-2 px-2 py-2"
+                    style={{ border: `1.5px solid ${LINE}`, fontFamily: "'Work Sans', sans-serif", fontSize: 13, background: "#fff", color: INK }}
+                  />
+                  <textarea
+                    value={custAddress}
+                    onChange={(e) => setCustAddress(e.target.value)}
+                    placeholder="Full Delivery Address (Hinganghat)"
+                    rows="2"
+                    className="w-full mt-2 px-2 py-2"
+                    style={{ border: `1.5px solid ${LINE}`, fontFamily: "'Work Sans', sans-serif", fontSize: 13, background: "#fff", color: INK, resize: "none" }}
+                  />
+                  {formError && (
+                    <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 10.5, color: ORANGE, marginTop: 6 }}>{formError}</p>
+                  )}
+
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: INK, opacity: 0.6, fontWeight: 700, display: "block", marginTop: 14 }}>PAYMENT METHOD</span>
+                  <div className="flex gap-2 mt-1.5 mb-3">
                     <button onClick={() => setPayMethod("cod")} className="flex-1 py-2" style={{
                       background: payMethod === "cod" ? NAVY : "transparent", color: payMethod === "cod" ? PAPER : INK,
                       border: `1.5px solid ${payMethod === "cod" ? NAVY : LINE}`, fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
