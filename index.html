@@ -121,6 +121,7 @@ function ProductCard({ p, onAdd, added, rating }) {
 
 const WHATSAPP_NUMBER = "919834976390";
 const COUNTER_NAMESPACE = "instant-hinganghat-app";
+const DELIVERY_FEE = 40;
 
 function InstantApp() {
   const [category, setCategory] = useState("all");
@@ -254,6 +255,7 @@ function InstantApp() {
   }
 
   const total = cart.reduce((s, p) => s + p.price, 0);
+  const grandTotal = cart.length > 0 ? total + DELIVERY_FEE : 0;
 
   function confirmOrder() {
     if (!custName.trim() || !custPhone.trim() || !custAddress.trim()) {
@@ -262,7 +264,7 @@ function InstantApp() {
     }
     setFormError("");
     const lines = cart.map((p) => `- ${p.name} (₹${p.price})`).join("%0A");
-    const msg = `Hi INSTANT! New order from Hinganghat%0A%0A${lines}%0A%0ATotal: ₹${total}%0APayment: Cash on Delivery%0A%0AName: ${custName}%0APhone: ${custPhone}%0AAddress: ${custAddress}`;
+    const msg = `Hi INSTANT! New order from Hinganghat%0A%0A${lines}%0A%0AItems Total: ₹${total}%0ADelivery Fee: ₹${DELIVERY_FEE}%0AGrand Total: ₹${grandTotal}%0APayment: Cash on Delivery%0A%0AName: ${custName}%0APhone: ${custPhone}%0AAddress: ${custAddress}`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
 
     fetch(`https://api.countapi.xyz/hit/${COUNTER_NAMESPACE}/orders`)
@@ -271,12 +273,12 @@ function InstantApp() {
         const id = d.value || orderCount + 1;
         setOrderCount(id);
         setOrderId(id);
-        saveOrderToHistory(id, cart, total);
+        saveOrderToHistory(id, cart, grandTotal);
       })
       .catch(() => {
         const id = orderCount + 1;
         setOrderId(id);
-        saveOrderToHistory(id, cart, total);
+        saveOrderToHistory(id, cart, grandTotal);
       });
 
     setOrderItems(cart);
@@ -667,9 +669,17 @@ function InstantApp() {
                   </div>
                   {cart.length > 0 && (
                     <div className="px-4 py-3 overflow-y-auto" style={{ borderTop: `1px solid ${LINE}` }}>
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between">
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: INK, opacity: 0.7 }}>Items Total</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK }}>₹{total}</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-1 pb-2" style={{ borderBottom: `1px dashed ${LINE}` }}>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: INK, opacity: 0.7 }}>Delivery Fee</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK }}>₹{DELIVERY_FEE}</span>
+                      </div>
+                      <div className="flex items-center justify-between mb-2 mt-1.5">
                         <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: INK }}>TOTAL</span>
-                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: ORANGE }}>₹{total}</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700, color: ORANGE }}>₹{grandTotal}</span>
                       </div>
 
                       <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: INK, opacity: 0.6, fontWeight: 700 }}>DELIVERY DETAILS</span>
