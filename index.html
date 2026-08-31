@@ -751,4 +751,29 @@ function InstantApp() {
                         <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: INK, fontWeight: 700 }}>Payment: Cash on Delivery</span>
                       </div>
 
-                      <button onClick={confirmOrder} className="w-full py-3" style={{ background: INK, color: PAPER, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize 
+                      <button onClick={confirmOrder} className="w-full py-3" style={{ background: INK, color: PAPER, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 13 }}>
+                        CONFIRM ORDER VIA WHATSAPP
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<InstantApp />);
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
