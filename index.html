@@ -118,6 +118,51 @@ function InstantApp() {
   const [custPhone, setCustPhone] = useState("");
   const [custAddress, setCustAddress] = useState("");
   const [formError, setFormError] = useState("");
+
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [loginStep, setLoginStep] = useState("details");
+  const [loginName, setLoginName] = useState("");
+  const [loginPhone, setLoginPhone] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [generatedOtp, setGeneratedOtp] = useState("");
+  const [otpInput, setOtpInput] = useState("");
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("instant_user") || "null");
+      if (saved && saved.name && saved.phone) {
+        setLoggedIn(true);
+        setCustName(saved.name);
+        setCustPhone(saved.phone);
+      }
+    } catch (e) {}
+    setAuthChecked(true);
+  }, []);
+
+  function sendOtp() {
+    if (!loginName.trim() || loginPhone.trim().length < 10) {
+      setLoginError("Poora naam aur 10-digit phone number daalo.");
+      return;
+    }
+    setLoginError("");
+    const code = String(Math.floor(1000 + Math.random() * 9000));
+    setGeneratedOtp(code);
+    setLoginStep("otp");
+  }
+
+  function verifyOtp() {
+    if (otpInput.trim() !== generatedOtp) {
+      setLoginError("Galat OTP, dubara try karo.");
+      return;
+    }
+    const user = { name: loginName.trim(), phone: loginPhone.trim() };
+    try { localStorage.setItem("instant_user", JSON.stringify(user)); } catch (e) {}
+    setCustName(user.name);
+    setCustPhone(user.phone);
+    setLoggedIn(true);
+  }
+
   const [orderCount, setOrderCount] = useState(0);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId] = useState(null);
@@ -220,8 +265,75 @@ function InstantApp() {
   function closeCart() {
     setCartOpen(false);
     setOrderPlaced(false);
-    setCustName(""); setCustPhone(""); setCustAddress("");
+    setCustAddress("");
     setItemRatings({}); setFeedbackText(""); setRatingsSubmitted(false); setOrderItems([]);
+  }
+
+  if (!authChecked) {
+    return <div style={{ minHeight: "100vh", background: "#DAD4C2" }}></div>;
+  }
+
+  if (!loggedIn) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center py-6" style={{ background: "#DAD4C2", fontFamily: "'Work Sans', sans-serif" }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');`}</style>
+        <div className="relative flex flex-col items-center justify-center px-6" style={{
+          width: 380, height: 780, background: PAPER, border: `10px solid ${INK}`, borderRadius: 34, boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
+        }}>
+          <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 30, color: INK, letterSpacing: -0.5 }}>INSTANT</span>
+          <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: ORANGE, fontWeight: 700, marginBottom: 28 }}>MEN'S FASHION, INSTANTLY.</span>
+
+          {loginStep === "details" ? (
+            <div className="w-full flex flex-col gap-2.5">
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: INK, fontWeight: 700 }}>WELCOME — LET'S GET STARTED</span>
+              <input
+                value={loginName}
+                onChange={(e) => setLoginName(e.target.value)}
+                placeholder="Your Full Name"
+                className="w-full px-3 py-2.5"
+                style={{ border: `1.5px solid ${LINE}`, fontFamily: "'Work Sans', sans-serif", fontSize: 14, background: "#fff", color: INK }}
+              />
+              <input
+                value={loginPhone}
+                onChange={(e) => setLoginPhone(e.target.value)}
+                placeholder="Contact Number"
+                type="tel"
+                className="w-full px-3 py-2.5"
+                style={{ border: `1.5px solid ${LINE}`, fontFamily: "'Work Sans', sans-serif", fontSize: 14, background: "#fff", color: INK }}
+              />
+              {loginError && <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: ORANGE }}>{loginError}</p>}
+              <button onClick={sendOtp} className="w-full py-3 mt-2" style={{ background: INK, color: PAPER, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 13 }}>
+                SEND OTP
+              </button>
+            </div>
+          ) : (
+            <div className="w-full flex flex-col gap-2.5">
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: INK, fontWeight: 700 }}>VERIFY YOUR NUMBER</span>
+              <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 12, color: INK, opacity: 0.75 }}>
+                4-digit code for {loginPhone}
+              </span>
+              <div className="px-3 py-2" style={{ background: "#fff", border: `1px dashed ${LINE}`, fontFamily: "'Space Mono', monospace", fontSize: 13, color: GREEN, fontWeight: 700 }}>
+                Demo OTP: {generatedOtp} <span style={{ color: INK, opacity: 0.5, fontWeight: 400 }}>(real SMS not yet connected)</span>
+              </div>
+              <input
+                value={otpInput}
+                onChange={(e) => setOtpInput(e.target.value)}
+                placeholder="Enter OTP"
+                className="w-full px-3 py-2.5"
+                style={{ border: `1.5px solid ${LINE}`, fontFamily: "'Space Mono', monospace", fontSize: 16, letterSpacing: 4, textAlign: "center", background: "#fff", color: INK }}
+              />
+              {loginError && <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: ORANGE }}>{loginError}</p>}
+              <button onClick={verifyOtp} className="w-full py-3 mt-1" style={{ background: INK, color: PAPER, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 13 }}>
+                VERIFY &amp; CONTINUE
+              </button>
+              <button onClick={() => { setLoginStep("details"); setOtpInput(""); setLoginError(""); }} style={{ fontFamily: "'Space Mono', monospace", fontSize: 10.5, color: INK, opacity: 0.6, marginTop: 4 }}>
+                ← Change number
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -340,37 +452,44 @@ function InstantApp() {
                   </div>
 
                   <div style={{ borderTop: `1px dashed ${LINE}`, paddingTop: 14 }}>
-                    {feedbackSent ? (
+                    {ratingsSubmitted ? (
                       <p className="text-center" style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: GREEN, fontWeight: 700 }}>
-                        🙏 Feedback sent, thank you!
+                        🙏 Ratings submitted, thank you!
                       </p>
                     ) : (
                       <>
                         <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: INK, opacity: 0.6, fontWeight: 700 }}>
-                          HOW WAS YOUR EXPERIENCE?
+                          RATE EACH ITEM (VISIBLE TO OTHER SHOPPERS)
                         </span>
-                        <div className="flex justify-center gap-2 my-2">
-                          {[1, 2, 3, 4, 5].map((n) => (
-                            <button key={n} onClick={() => setRating(n)} style={{ fontSize: 26, opacity: n <= rating ? 1 : 0.3 }}>⭐</button>
+                        <div className="flex flex-col gap-2 mt-2">
+                          {orderItems.map((p, i) => (
+                            <div key={i} className="flex items-center justify-between px-2 py-1.5" style={{ background: "#fff", border: `1px solid ${LINE}` }}>
+                              <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 12, color: INK, fontWeight: 600 }}>{p.name}</span>
+                              <div className="flex gap-0.5">
+                                {[1, 2, 3, 4, 5].map((n) => (
+                                  <button key={n} onClick={() => rateProduct(p.id, n)} style={{ fontSize: 16, opacity: n <= (itemRatings[p.id] || 0) ? 1 : 0.25 }}>⭐</button>
+                                ))}
+                              </div>
+                            </div>
                           ))}
                         </div>
                         <textarea
                           value={feedbackText}
                           onChange={(e) => setFeedbackText(e.target.value)}
-                          placeholder="Tell us anything — genuinely helps us improve (optional)"
+                          placeholder="Anything else? (optional)"
                           rows="2"
-                          className="w-full px-2 py-2"
+                          className="w-full px-2 py-2 mt-2"
                           style={{ border: `1.5px solid ${LINE}`, fontFamily: "'Work Sans', sans-serif", fontSize: 12.5, background: "#fff", color: INK, resize: "none" }}
                         />
                         <button
-                          onClick={submitFeedback}
-                          disabled={rating === 0}
+                          onClick={submitRatings}
+                          disabled={Object.values(itemRatings).every((v) => !v)}
                           className="w-full mt-2 py-2.5"
                           style={{
-                            background: rating === 0 ? LINE : INK, color: PAPER, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12,
+                            background: Object.values(itemRatings).every((v) => !v) ? LINE : INK, color: PAPER, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12,
                           }}
                         >
-                          SUBMIT FEEDBACK
+                          SUBMIT RATINGS
                         </button>
                       </>
                     )}
