@@ -437,8 +437,8 @@ function InstantApp() {
               <button onClick={verifyCaptcha} className="w-full py-3 mt-1" style={{ background: INK, color: PAPER, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 13 }}>
                 VERIFY &amp; CONTINUE
               </button>
-              <button onClick={() => { setLoginStep("details"); setCaptchaInput("");
-              ← Change number
+              <button onClick={() => { setLoginStep("details"); setCaptchaInput(""); setLoginError(""); }} style={{ fontFamily: "'Space Mono', monospace", fontSize: 10.5, color: INK, opacity: 0.6, marginTop: 4 }}>
+                ← Change number
               </button>
             </div>
           )}
