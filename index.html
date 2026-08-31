@@ -18,6 +18,20 @@
   .ticker-track { animation: scroll-left 14s linear infinite; }
   @keyframes scroll-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
   @media (prefers-reduced-motion: reduce) { .ticker-track { animation: none; } }
+
+  .app-bg { padding: 24px 0; min-height: 100vh; min-height: 100dvh; }
+  .phone-frame { width: 380px; height: 780px; }
+  @media (max-width: 640px) {
+    .app-bg { padding: 0 !important; }
+    .phone-frame {
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      border: none !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+  }
 </style>
 </head>
 <body>
@@ -28,7 +42,7 @@ const { useState, useMemo, useEffect } = React;
 
 const INK = "#171410";
 const PAPER = "#EDE9DD";
-const ORANGE = "#FF4713";
+const ORANGE = "#F5B301";
 const GREEN = "#1C8A4B";
 const NAVY = "#24306B";
 const LINE = "#C9C2AE";
@@ -329,10 +343,10 @@ function InstantApp() {
 
   if (!loggedIn) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center py-6" style={{ background: "#DAD4C2", fontFamily: "'Work Sans', sans-serif" }}>
+      <div className="app-bg w-full flex items-center justify-center" style={{ background: "#DAD4C2", fontFamily: "'Work Sans', sans-serif" }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');`}</style>
-        <div className="relative flex flex-col items-center justify-center px-6" style={{
-          width: 380, height: 780, background: PAPER, border: `10px solid ${INK}`, borderRadius: 34, boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
+        <div className="phone-frame relative flex flex-col items-center justify-center px-6" style={{
+          background: PAPER, border: `10px solid ${INK}`, borderRadius: 34, boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
         }}>
           <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 30, color: INK, letterSpacing: -0.5 }}>INSTANT</span>
           <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: ORANGE, fontWeight: 700, marginBottom: 28 }}>MEN'S FASHION, INSTANTLY.</span>
@@ -396,9 +410,9 @@ function InstantApp() {
   }
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center py-6" style={{ background: "#DAD4C2", fontFamily: "'Work Sans', sans-serif" }}>
-      <div className="relative overflow-hidden flex flex-col" style={{
-        width: 380, height: 780, background: PAPER, border: `10px solid ${INK}`, borderRadius: 34, boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
+    <div className="app-bg w-full flex items-center justify-center" style={{ background: "#DAD4C2", fontFamily: "'Work Sans', sans-serif" }}>
+      <div className="phone-frame relative overflow-hidden flex flex-col" style={{
+        background: PAPER, border: `10px solid ${INK}`, borderRadius: 34, boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
       }}>
         <div className="overflow-hidden shrink-0 flex items-center" style={{ height: 26, background: INK }}>
           <div className="ticker-track flex items-center gap-8 whitespace-nowrap">
@@ -717,4 +731,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(<InstantApp />);
 </script>
 </body>
 </html>
-  
