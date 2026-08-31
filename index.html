@@ -4,10 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>INSTANT — Men's Fashion, Instantly.</title>
-<link rel="manifest" href="./manifest.json" />
+<link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#171410" />
-<link rel="icon" href="./icon-192.png" />
-<link rel="apple-touch-icon" href="./icon-192.png" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -67,18 +67,6 @@ const GRADIENTS = {
 };
 
 const PRODUCTS = [
-  { id: 1, name: "Oversized Black Tee", cat: "tshirts", price: 399, sold: 42, trending: true },
-  { id: 2, name: "Baggy Cargo", cat: "shorts", price: 699, sold: 31, trending: true },
-  { id: 3, name: "Relaxed Fit Shirt", cat: "shirts", price: 499, sold: 27, trending: true },
-  { id: 4, name: "Washed Denim Jeans", cat: "jeans", price: 899, sold: 19 },
-  { id: 5, name: "Graphic Print Tee", cat: "tshirts", price: 349, sold: 55, trending: true },
-  { id: 6, name: "Cargo Shorts", cat: "shorts", price: 449, sold: 22 },
-  { id: 7, name: "Chunky Sneakers", cat: "footwear", price: 1299, sold: 14 },
-  { id: 8, name: "Canvas Trainers", cat: "footwear", price: 799, sold: 18 },
-  { id: 9, name: "Corduroy Cap", cat: "accessories", price: 299, sold: 38 },
-  { id: 10, name: "Chain Bracelet", cat: "accessories", price: 199, sold: 46 },
-  { id: 11, name: "Slim Fit Chinos", cat: "jeans", price: 649, sold: 12 },
-  { id: 12, name: "Polo Tee", cat: "tshirts", price: 449, sold: 20 },
   { id: 13, name: "Asian Sneakers", cat: "footwear", price: 549, sold: 9, img: "product-13.jpg", sizes: [7, 8, 9] },
   { id: 14, name: "Asian Sneakers - Grey", cat: "footwear", price: 549, sold: 6, img: "product-14.jpg", sizes: [7, 8, 9] },
 ];
@@ -113,28 +101,10 @@ function ProductCard({ p, onAdd, added, rating }) {
     <div className="flex flex-col shrink-0" style={{ width: 152, background: "#fff", border: `1px solid ${LINE}` }}>
       <div className="relative flex items-center justify-center overflow-hidden" style={{ height: 130, background: GRADIENTS[p.cat] }}>
         {p.img ? (
-          <img
-            src={p.img}
-            alt={p.name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-              const fallback = e.currentTarget.parentElement?.querySelector(".img-fallback");
-              if (fallback) fallback.style.display = "block";
-            }}
-          />
-        ) : null}
-        <span
-          className="img-fallback"
-          style={{
-            display: p.img ? "none" : "block",
-            fontSize: 40,
-            opacity: 0.9
-          }}
-        >
-          {CATEGORIES.find((c) => c.id === p.cat)?.emoji}
-        </span>
+          <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
+        ) : (
+          <span style={{ fontSize: 40, opacity: 0.9 }}>{CATEGORIES.find((c) => c.id === p.cat)?.emoji}</span>
+        )}
         {p.trending && (
           <div className="absolute top-1.5 left-1.5 flex items-center gap-0.5" style={{
             background: INK, color: ORANGE, fontFamily: "'Space Mono', monospace", fontSize: 10, fontWeight: 700, padding: "2px 5px",
@@ -450,6 +420,9 @@ function InstantApp() {
                 placeholder="Enter the code above"
                 className="w-full px-3 py-2.5"
                 style={{ border: `1.5px solid ${LINE}`, fontFamily: "'Space Mono', monospace", fontSize: 15, letterSpacing: 3, textAlign: "center", background: "#fff", color: INK, textTransform: "uppercase" }}
+              />
+              {loginError && <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: ORANGE }}>{loginError}</p>}
+              <button onClick={verifyCaptcha} className="w-full py-3 mt-1" style={{ background: INK, color: PAPER, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 13 }}>
                 VERIFY &amp; CONTINUE
               </button>
               <button onClick={() => { setLoginStep("details"); setCaptchaInput(""); setLoginError(""); }} style={{ fontFamily: "'Space Mono', monospace", fontSize: 10.5, color: INK, opacity: 0.6, marginTop: 4 }}>
@@ -511,24 +484,28 @@ function InstantApp() {
                 ))}
               </div>
 
-              <div className="mt-4">
-                <div className="flex items-center gap-1.5 px-4 mb-2">
-                  <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: INK }}>🔥 Today's Trending Fits</span>
+              {trending.length > 0 && (
+                <div className="mt-4">
+                  <div className="flex items-center gap-1.5 px-4 mb-2">
+                    <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: INK }}>🔥 Today's Trending Fits</span>
+                  </div>
+                  <div className="flex gap-3 px-4 overflow-x-auto pb-2">
+                    {trending.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
+                  </div>
                 </div>
-                <div className="flex gap-3 px-4 overflow-x-auto pb-2">
-                  {trending.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
-                </div>
-              </div>
+              )}
 
-              <div className="mt-5">
-                <div className="flex items-center justify-between px-4 mb-2">
-                  <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: INK }}>Under ₹499</span>
-                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: GREEN, fontWeight: 700 }}>COLLEGE PICKS</span>
+              {under499.length > 0 && (
+                <div className="mt-5">
+                  <div className="flex items-center justify-between px-4 mb-2">
+                    <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: INK }}>Under ₹499</span>
+                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: GREEN, fontWeight: 700 }}>COLLEGE PICKS</span>
+                  </div>
+                  <div className="flex gap-3 px-4 overflow-x-auto pb-2">
+                    {under499.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
+                  </div>
                 </div>
-                <div className="flex gap-3 px-4 overflow-x-auto pb-2">
-                  {under499.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
-                </div>
-              </div>
+              )}
 
               <div className="mt-5 px-4">
                 <div className="flex items-center gap-2 mb-2 pb-1" style={{ borderBottom: `1px dashed ${LINE}` }}>
@@ -536,9 +513,13 @@ function InstantApp() {
                     {category === "all" ? "All Products" : CATEGORIES.find((c) => c.id === category)?.label}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {filtered.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
-                </div>
+                {filtered.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {filtered.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
+                  </div>
+                ) : (
+                  <p className="py-8 text-center" style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK, opacity: 0.6 }}>No products in this category yet.</p>
+                )}
               </div>
             </>
           )}
@@ -786,7 +767,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(<InstantApp />);
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").catch(() => {});
+      navigator.serviceWorker.register("sw.js").catch(() => {});
     });
   }
 </script>
