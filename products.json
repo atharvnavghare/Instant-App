@@ -1,0 +1,4 @@
+[
+  { "id": 13, "name": "Asian Sneakers", "cat": "footwear", "price": 549, "mrp": 699, "sold": 9, "img": "product-13.jpg", "images": ["product-13.jpg"], "sizes": [7, 8, 9] },
+  { "id": 14, "name": "Asian Sneakers - Grey", "cat": "footwear", "price": 549, "mrp": 699, "sold": 6, "img": "product-14.jpg", "images": ["product-14.jpg"], "sizes": [7, 8, 9] }
+]
