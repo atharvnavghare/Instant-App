@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="robots" content="noindex, nofollow" />
+<link rel="manifest" href="admin-manifest.json" />
+<meta name="theme-color" content="#171410" />
+<link rel="apple-touch-icon" href="icon-192.png" />
 <title>INSTANT — Admin (Add Product)</title>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -29,7 +32,7 @@ const NAVY = "#24306B";
 const LINE = "#C9C2AE";
 
 // CHANGE THIS PASSWORD to whatever you like — just edit the text between the quotes below.
-const ADMIN_PASSWORD = "instant2026";
+const ADMIN_PASSWORD = "9834976390";
 
 const CATEGORIES = [
   { id: "tshirts", label: "T-Shirts" },
@@ -211,6 +214,69 @@ function AdminApp() {
             <label style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: INK }}>SIZES (optional, comma se alag karo)</label>
             <input value={sizesText} onChange={(e) => setSizesText(e.target.value)} placeholder="e.g. 7,8,9 or S,M,L,XL"
               className="px-3 py-2" style={{ border: `1.5px solid ${LINE}`, background: "#fff", fontFamily: "'Work Sans', sans-serif", fontSize: 14, color: INK }} />
+            <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 11, color: INK, opacity: 0.6 }}>Khaali chhod do agar size select karne ki zaroorat nahi (jaise cap, bracelet).</span>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: INK }}>PHOTOS (max 4, alag angles)</label>
+            <input type="file" accept="image/*" multiple onChange={(e) => e.target.files.length && handleFiles(e.target.files)}
+              className="px-2 py-2" style={{ border: `1.5px dashed ${LINE}`, background: "#fff", fontFamily: "'Work Sans', sans-serif", fontSize: 12, color: INK }} />
+            {uploading && <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: INK, opacity: 0.6 }}>Processing photo...</span>}
+            {images.length > 0 && (
+              <div className="flex gap-2 flex-wrap mt-1">
+                {images.map((im, i) => (
+                  <div key={i} className="relative" style={{ width: 64, height: 64 }}>
+                    <img src={im} className="w-full h-full object-cover" style={{ border: `1px solid ${LINE}` }} />
+                    <button onClick={() => removeImage(i)} className="absolute -top-1.5 -right-1.5 flex items-center justify-center" style={{
+                      width: 18, height: 18, borderRadius: "50%", background: "#c0392b", color: "#fff", fontSize: 11, lineHeight: 1,
+                    }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button onClick={generate} className="w-full py-3 mt-1" style={{ background: INK, color: PAPER, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 13 }}>
+            ⚡ GENERATE CODE
+          </button>
+        </div>
+
+        {code && (
+          <div className="flex flex-col gap-2 p-4" style={{ background: "#fff", border: `1.5px solid ${GREEN}` }}>
+            <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14, color: GREEN }}>✅ Code Ready!</span>
+            <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 12.5, color: INK, whiteSpace: "pre-line" }}>
+              1. Neeche "COPY CODE" pe tap karo{"\n"}
+              2. GitHub pe index.html file kholo, edit (pencil) pe tap karo{"\n"}
+              3. Jahan "const PRODUCTS = [" likha hai, uske turant neeche is code ko paste karo{"\n"}
+              4. Commit changes — naya product live ho jayega
+            </span>
+            <textarea readOnly value={code} rows="10" className="w-full px-2 py-2" style={{
+              border: `1.5px solid ${LINE}`, fontFamily: "'Space Mono', monospace", fontSize: 10.5, color: INK, background: PAPER, resize: "none",
+            }} />
+            <div className="flex gap-2">
+              <button onClick={copyCode} className="flex-1 py-2.5" style={{ background: copied ? GREEN : ORANGE, color: INK, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12 }}>
+                {copied ? "✓ COPIED!" : "COPY CODE"}
+              </button>
+              <button onClick={resetForm} className="py-2.5 px-4" style={{ border: `1.5px solid ${LINE}`, background: "transparent", color: INK, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12 }}>
+                + New Product
+              </button>
+            </div>
+          </div>
+        )}
+
+        <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: INK, opacity: 0.5, textAlign: "center" }}>
+          Photos yahi is code ke andar save ho jaati hain (koi alag file upload nahi karni padti).
+        </p>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<AdminApp />);
+</script>
+</body>
+</html>
+lid ${LINE}`, background: "#fff", fontFamily: "'Work Sans', sans-serif", fontSize: 14, color: INK }} />
             <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 11, color: INK, opacity: 0.6 }}>Khaali chhod do agar size select karne ki zaroorat nahi (jaise cap, bracelet).</span>
           </div>
 
