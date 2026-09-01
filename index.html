@@ -274,7 +274,12 @@ const DELIVERY_FEE = 40;
 
 function InstantApp() {
   const [category, setCategory] = useState("all");
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("instant_cart") || "[]");
+      return Array.isArray(saved) ? saved : [];
+    } catch (e) { return []; }
+  });
   const [cartOpen, setCartOpen] = useState(false);
   const [justAdded, setJustAdded] = useState(null);
   const [tab, setTab] = useState("home");
@@ -349,6 +354,10 @@ function InstantApp() {
   const [detailProduct, setDetailProduct] = useState(null);
 
   useEffect(() => {
+    try { localStorage.setItem("instant_cart", JSON.stringify(cart)); } catch (e) {}
+  }, [cart]);
+
+  useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("instant_orders") || "[]");
       setMyOrders(saved);
@@ -394,6 +403,10 @@ function InstantApp() {
     setCart((c) => [...c, { ...p, selectedSize: size }]);
     setJustAdded(p.id);
     setTimeout(() => setJustAdded(null), 900);
+  }
+
+  function removeFromCart(index) {
+    setCart((c) => c.filter((_, i) => i !== index));
   }
 
   const total = cart.reduce((s, p) => s + p.price, 0);
@@ -773,7 +786,7 @@ function InstantApp() {
                         <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: INK, opacity: 0.6, fontWeight: 700 }}>
                           RATE EACH ITEM (VISIBLE TO OTHER SHOPPERS)
                         </span>
-                        <div className="flex flex-col gap-2 mt-2">
+                 <div className="flex flex-col gap-2 mt-2">
                           {orderItems.map((p, i) => (
                             <div key={i} className="flex items-center justify-between px-2 py-1.5" style={{ background: "#fff", border: `1px solid ${LINE}` }}>
                               <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 12, color: INK, fontWeight: 600 }}>{p.name}</span>
@@ -818,9 +831,15 @@ function InstantApp() {
                       <p className="py-8 text-center" style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK, opacity: 0.6 }}>Bag is empty. Add something trending.</p>
                     ) : (
                       cart.map((p, i) => (
-                        <div key={i} className="flex items-center justify-between py-2" style={{ borderBottom: `1px dashed ${LINE}` }}>
+                        <div key={i} className="flex items-center justify-between py-2 gap-2" style={{ borderBottom: `1px dashed ${LINE}` }}>
                           <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 13, color: INK, fontWeight: 600 }}>{p.name}{p.selectedSize ? ` (Size ${p.selectedSize})` : ""}</span>
-                          <PriceTag value={p.price} />
+                          <div className="flex items-center gap-2 shrink-0">
+                            <PriceTag value={p.price} />
+                            <button onClick={() => removeFromCart(i)} aria-label="Remove item" style={{
+                              width: 22, height: 22, fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700,
+                              color: "#c0392b", border: `1px solid #c0392b`, background: "transparent", lineHeight: 1,
+                            }}>✕</button>
+                          </div>
                         </div>
                       ))
                     )}
