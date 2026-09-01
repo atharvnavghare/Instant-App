@@ -66,10 +66,7 @@ const GRADIENTS = {
   accessories: "linear-gradient(135deg,#5c3a5c,#171410)",
 };
 
-const PRODUCTS = [
-  { id: 13, name: "Asian Sneakers", cat: "footwear", price: 549, mrp: 699, sold: 9, img: "product-13.jpg", sizes: [7, 8, 9] },
-  { id: 14, name: "Asian Sneakers - Grey", cat: "footwear", price: 549, mrp: 699, sold: 6, img: "product-14.jpg", sizes: [7, 8, 9] },
-];
+// PRODUCTS is now loaded at runtime from products.json (see useEffect in InstantApp)
 
 function PriceTag({ value, mrp, size }) {
   const big = size === "lg";
@@ -86,6 +83,55 @@ function PriceTag({ value, mrp, size }) {
       )}
       {off > 0 && (
         <span style={{ fontFamily: "'Space Mono', monospace", fontSize: big ? 12 : 10, color: GREEN, fontWeight: 800 }}>{off}% OFF</span>
+      )}
+    </div>
+  );
+}
+
+function ImageGallery({ images, cat, name }) {
+  const [idx, setIdx] = useState(0);
+  const pics = images && images.length > 0 ? images : [];
+  const touchStartX = React.useRef(null);
+
+  function go(delta) {
+    setIdx((i) => (i + delta + pics.length) % pics.length);
+  }
+  function onTouchStart(e) { touchStartX.current = e.touches[0].clientX; }
+  function onTouchEnd(e) {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (dx > 40) go(-1);
+    else if (dx < -40) go(1);
+    touchStartX.current = null;
+  }
+
+  if (pics.length === 0) {
+    return (
+      <div className="w-full flex items-center justify-center" style={{ height: 260, background: GRADIENTS[cat] }}>
+        <span style={{ fontSize: 70, opacity: 0.9 }}>{CATEGORIES.find((c) => c.id === cat)?.emoji}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full" style={{ height: 260, background: GRADIENTS[cat] }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <img src={pics[idx]} alt={name} className="w-full h-full object-cover" />
+      {pics.length > 1 && (
+        <>
+          <button onClick={() => go(-1)} className="absolute left-1.5 top-1/2 flex items-center justify-center" style={{
+            transform: "translateY(-50%)", width: 30, height: 30, borderRadius: "50%", background: "rgba(23,20,16,0.55)", color: PAPER, fontSize: 16,
+          }}>‹</button>
+          <button onClick={() => go(1)} className="absolute right-1.5 top-1/2 flex items-center justify-center" style={{
+            transform: "translateY(-50%)", width: 30, height: 30, borderRadius: "50%", background: "rgba(23,20,16,0.55)", color: PAPER, fontSize: 16,
+          }}>›</button>
+          <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-1.5">
+            {pics.map((_, i) => (
+              <span key={i} style={{
+                width: 6, height: 6, borderRadius: "50%", background: i === idx ? INK : "rgba(23,20,16,0.35)",
+              }} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
@@ -116,13 +162,7 @@ function ProductDetailModal({ p, onClose, onAdd, rating, extraSold }) {
         <button onClick={onClose} style={{ fontSize: 18, color: INK }}>✕</button>
       </div>
       <div className="flex-1 overflow-y-auto">
-        <div className="w-full flex items-center justify-center" style={{ height: 260, background: GRADIENTS[p.cat] }}>
-          {p.img ? (
-            <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
-          ) : (
-            <span style={{ fontSize: 70, opacity: 0.9 }}>{CATEGORIES.find((c) => c.id === p.cat)?.emoji}</span>
-          )}
-        </div>
+        <ImageGallery images={p.images} cat={p.cat} name={p.name} />
         <div className="px-4 py-4 flex flex-col gap-3">
           <div>
             <span style={{
@@ -274,6 +314,17 @@ const DELIVERY_FEE = 40;
 
 function InstantApp() {
   const [category, setCategory] = useState("all");
+  const [PRODUCTS, setPRODUCTS] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("./products.json", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => setPRODUCTS(Array.isArray(data) ? data : []))
+      .catch(() => setPRODUCTS([]))
+      .finally(() => setProductsLoading(false));
+  }, []);
+
   const [cart, setCart] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("instant_cart") || "[]");
@@ -344,6 +395,7 @@ function InstantApp() {
   const [orderCount, setOrderCount] = useState(0);
   const [orderPlaced, setOrderPlaced] = useState(false);  const [orderId, setOrderId] = useState(null);
   const [orderItems, setOrderItems] = useState([]);
+  const [orderMsg, setOrderMsg] = useState("");
   const [itemRatings, setItemRatings] = useState({});
   const [ratingsMap, setRatingsMap] = useState({});
   const [soldMap, setSoldMap] = useState({});
@@ -380,7 +432,7 @@ function InstantApp() {
       const catLabel = (CATEGORIES.find((c) => c.id === p.cat)?.label || "").toLowerCase();
       return p.name.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q) || catLabel.includes(q);
     });
-  }, [searchQuery]);
+  }, [searchQuery, PRODUCTS]);
 
   useEffect(() => {
     setOrderCount(loadJSON("instant_order_count", { n: 0 }).n || 0);
@@ -395,21 +447,39 @@ function InstantApp() {
     setRatingsMap(map);
   }, []);
 
-  const filtered = useMemo(() => (category === "all" ? PRODUCTS : PRODUCTS.filter((p) => p.cat === category)), [category]);
+  const filtered = useMemo(() => (category === "all" ? PRODUCTS : PRODUCTS.filter((p) => p.cat === category)), [category, PRODUCTS]);
   const trending = PRODUCTS.filter((p) => p.trending);
   const under499 = PRODUCTS.filter((p) => p.price < 499);
 
   function addToCart(p, size) {
-    setCart((c) => [...c, { ...p, selectedSize: size }]);
+    setCart((c) => {
+      const idx = c.findIndex((item) => item.id === p.id && item.selectedSize === size);
+      if (idx > -1) {
+        const next = [...c];
+        next[idx] = { ...next[idx], qty: next[idx].qty + 1 };
+        return next;
+      }
+      return [...c, { ...p, selectedSize: size, qty: 1 }];
+    });
     setJustAdded(p.id);
     setTimeout(() => setJustAdded(null), 900);
+  }
+
+  function changeQty(index, delta) {
+    setCart((c) => {
+      const next = [...c];
+      const newQty = next[index].qty + delta;
+      if (newQty <= 0) return next.filter((_, i) => i !== index);
+      next[index] = { ...next[index], qty: newQty };
+      return next;
+    });
   }
 
   function removeFromCart(index) {
     setCart((c) => c.filter((_, i) => i !== index));
   }
 
-  const total = cart.reduce((s, p) => s + p.price, 0);
+  const total = cart.reduce((s, p) => s + p.price * p.qty, 0);
   const grandTotal = cart.length > 0 ? total + DELIVERY_FEE : 0;
 
   function confirmOrder() {
@@ -418,7 +488,7 @@ function InstantApp() {
       return;
     }
     setFormError("");
-    const lines = cart.map((p) => `- ${p.name}${p.selectedSize ? " (Size: " + p.selectedSize + ")" : ""} (₹${p.price})`).join("%0A");
+    const lines = cart.map((p) => `- ${p.name}${p.selectedSize ? " (Size: " + p.selectedSize + ")" : ""} x${p.qty} (₹${p.price} each = ₹${p.price * p.qty})`).join("%0A");
     const msg = `Hi INSTANT! New order from Hinganghat%0A%0A${lines}%0A%0AItems Total: ₹${total}%0ADelivery Fee: ₹${DELIVERY_FEE}%0AGrand Total: ₹${grandTotal}%0APayment: Cash on Delivery%0A%0AName: ${custName}%0APhone: ${custPhone}%0AAddress: ${custAddress}`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
 
@@ -429,23 +499,24 @@ function InstantApp() {
 
     setSoldMap((prev) => {
       const next = { ...prev };
-      cart.forEach((p) => { next[p.id] = (next[p.id] || 0) + 1; });
+      cart.forEach((p) => { next[p.id] = (next[p.id] || 0) + p.qty; });
       saveJSON("instant_sold_map", next);
       return next;
     });
 
-    saveOrderToHistory(newOrderCount, cart, grandTotal);
+    saveOrderToHistory(newOrderCount, cart, grandTotal, msg);
 
     setOrderItems(cart);
+    setOrderMsg(msg);
     setOrderPlaced(true);
     setCart([]);
   }
 
-  function saveOrderToHistory(id, items, orderTotal) {
+  function saveOrderToHistory(id, items, orderTotal, msg) {
     const record = {
-      id, items: items.map((p) => ({ name: p.name, price: p.price, size: p.selectedSize })),
+      id, items: items.map((p) => ({ name: p.name, price: p.price, size: p.selectedSize, qty: p.qty })),
       total: orderTotal, date: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
-      address: custAddress,
+      address: custAddress, msg,
     };
     setMyOrders((prev) => {
       const next = [record, ...prev];
@@ -489,7 +560,7 @@ function InstantApp() {
     setCartOpen(false);
     setOrderPlaced(false);
     setCustAddress("");
-    setItemRatings({}); setFeedbackText(""); setRatingsSubmitted(false); setOrderItems([]);
+    setItemRatings({}); setFeedbackText(""); setRatingsSubmitted(false); setOrderItems([]); setOrderMsg("");
   }
 
   if (!authChecked) {
@@ -642,7 +713,9 @@ function InstantApp() {
                     {category === "all" ? "All Products" : CATEGORIES.find((c) => c.id === category)?.label}
                   </span>
                 </div>
-                {filtered.length > 0 ? (
+                {productsLoading ? (
+                  <p className="py-8 text-center" style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK, opacity: 0.6 }}>Loading products…</p>
+                ) : filtered.length > 0 ? (
                   <div className="grid grid-cols-2 gap-3">
                     {filtered.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} extraSold={soldMap[p.id]} onOpenDetail={setDetailProduct} />)}
                   </div>
@@ -776,6 +849,45 @@ function InstantApp() {
                     </span>
                   </div>
 
+                  <div className="mb-4" style={{ background: "#fff", border: `1.5px solid ${INK}` }}>
+                    <div className="px-3 py-2" style={{ borderBottom: `1px dashed ${LINE}` }}>
+                      <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 12, color: INK }}>ORDER SUMMARY {orderId ? "— #IN-" + orderId : ""}</span>
+                    </div>
+                    <div className="px-3 py-2 flex flex-col gap-1.5">
+                      {orderItems.map((p, i) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 12, color: INK }}>
+                            {p.name}{p.selectedSize ? ` (Size ${p.selectedSize})` : ""} × {p.qty}
+                          </span>
+                          <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK, fontWeight: 700 }}>₹{p.price * p.qty}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="px-3 py-2 flex flex-col gap-1" style={{ borderTop: `1px dashed ${LINE}` }}>
+                      <div className="flex items-center justify-between">
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: INK, opacity: 0.7 }}>Items Total</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11.5, color: INK }}>₹{orderItems.reduce((s, p) => s + p.price * p.qty, 0)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: INK, opacity: 0.7 }}>Delivery Fee</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11.5, color: INK }}>₹{DELIVERY_FEE}</span>
+                      </div>
+                      <div className="flex items-center justify-between pt-1" style={{ borderTop: `1px dashed ${LINE}` }}>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK, fontWeight: 800 }}>Grand Total</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, color: INK, fontWeight: 800 }}>₹{orderItems.reduce((s, p) => s + p.price * p.qty, 0) + DELIVERY_FEE}</span>
+                      </div>
+                      <div className="flex items-center justify-between pt-1">
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10.5, color: INK, opacity: 0.6 }}>Payment</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10.5, color: GREEN, fontWeight: 700 }}>CASH ON DELIVERY</span>
+                      </div>
+                    </div>
+                    {orderMsg && (
+                      <button onClick={() => window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${orderMsg}`, "_blank")} className="w-full py-2" style={{
+                        borderTop: `1.5px solid ${INK}`, background: GREEN, color: PAPER, fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
+                      }}>↺ VIEW / RESEND ON WHATSAPP</button>
+                    )}
+                  </div>
+
                   <div style={{ borderTop: `1px dashed ${LINE}`, paddingTop: 14 }}>
                     {ratingsSubmitted ? (
                       <p className="text-center" style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: GREEN, fontWeight: 700 }}>
@@ -786,7 +898,7 @@ function InstantApp() {
                         <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: INK, opacity: 0.6, fontWeight: 700 }}>
                           RATE EACH ITEM (VISIBLE TO OTHER SHOPPERS)
                         </span>
-                 <div className="flex flex-col gap-2 mt-2">
+                        <div className="flex flex-col gap-2 mt-2">
                           {orderItems.map((p, i) => (
                             <div key={i} className="flex items-center justify-between px-2 py-1.5" style={{ background: "#fff", border: `1px solid ${LINE}` }}>
                               <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 12, color: INK, fontWeight: 600 }}>{p.name}</span>
@@ -832,9 +944,22 @@ function InstantApp() {
                     ) : (
                       cart.map((p, i) => (
                         <div key={i} className="flex items-center justify-between py-2 gap-2" style={{ borderBottom: `1px dashed ${LINE}` }}>
-                          <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 13, color: INK, fontWeight: 600 }}>{p.name}{p.selectedSize ? ` (Size ${p.selectedSize})` : ""}</span>
+                          <div className="flex flex-col gap-1">
+                            <span style={{ fontFamily: "'Work Sans', sans-serif", fontSize: 13, color: INK, fontWeight: 600 }}>{p.name}{p.selectedSize ? ` (Size ${p.selectedSize})` : ""}</span>
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => changeQty(i, -1)} style={{
+                                width: 20, height: 20, fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700,
+                                color: INK, border: `1px solid ${LINE}`, background: "transparent", lineHeight: 1,
+                              }}>−</button>
+                              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK, fontWeight: 700, minWidth: 14, textAlign: "center" }}>{p.qty}</span>
+                              <button onClick={() => changeQty(i, 1)} style={{
+                                width: 20, height: 20, fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700,
+                                color: INK, border: `1px solid ${LINE}`, background: "transparent", lineHeight: 1,
+                              }}>+</button>
+                            </div>
+                          </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            <PriceTag value={p.price} />
+                            <PriceTag value={p.price * p.qty} />
                             <button onClick={() => removeFromCart(i)} aria-label="Remove item" style={{
                               width: 22, height: 22, fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700,
                               color: "#c0392b", border: `1px solid #c0392b`, background: "transparent", lineHeight: 1,
