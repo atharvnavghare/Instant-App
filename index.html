@@ -12,6 +12,23 @@
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDQfP7k5u5R-d6_rEQqNqU0RU_V6CK8xRE",
+    authDomain: "instant-41fd1.firebaseapp.com",
+    projectId: "instant-41fd1",
+    storageBucket: "instant-41fd1.firebasestorage.app",
+    messagingSenderId: "257137936905",
+    appId: "1:257137936905:web:9c9589d1076cf1ab08c6d8"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  window.firebaseDB = { db, collection, onSnapshot };
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
   body { margin: 0; }
