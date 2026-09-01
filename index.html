@@ -82,8 +82,9 @@ function PriceTag({ value, size }) {
   );
 }
 
-function ProductCard({ p, onAdd, added, rating }) {
+function ProductCard({ p, onAdd, added, rating, extraSold }) {
   const hasRating = rating && rating.count > 0;
+  const soldToday = p.sold + (extraSold || 0);
   const hasSizes = p.sizes && p.sizes.length > 0;
   const [selectedSize, setSelectedSize] = useState(hasSizes ? null : undefined);
   const [sizeError, setSizeError] = useState(false);
@@ -114,7 +115,7 @@ function ProductCard({ p, onAdd, added, rating }) {
       </div>
       <div className="px-2 pt-3 pb-2 flex flex-col gap-1.5" style={{ color: INK }}>
         <p className="leading-tight" style={{ fontFamily: "'Work Sans', sans-serif", fontWeight: 600, fontSize: 12.5, minHeight: 32 }}>{p.name}</p>
-        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: GREEN, fontWeight: 700 }}>● {p.sold} sold today</span>
+        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: GREEN, fontWeight: 700 }}>● {soldToday} sold today</span>
         <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10.5, color: hasRating ? INK : "#999", fontWeight: 700 }}>
           {hasRating ? `⭐ ${rating.avg.toFixed(1)} (${rating.count})` : "☆ No ratings yet"}
         </span>
@@ -144,6 +145,16 @@ function ProductCard({ p, onAdd, added, rating }) {
 }
 
 const WHATSAPP_NUMBER = "919834976390";
+function loadJSON(key, fallback) {
+  try {
+    const v = JSON.parse(localStorage.getItem(key));
+    return v && typeof v === "object" ? v : fallback;
+  } catch (e) { return fallback; }
+}
+function saveJSON(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+}
+
 const COUNTER_NAMESPACE = "instant-hinganghat-app";
 const DELIVERY_FEE = 40;
 
@@ -216,6 +227,7 @@ function InstantApp() {
   const [orderItems, setOrderItems] = useState([]);
   const [itemRatings, setItemRatings] = useState({});
   const [ratingsMap, setRatingsMap] = useState({});
+  const [soldMap, setSoldMap] = useState({});
   const [ratingsSubmitted, setRatingsSubmitted] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -247,25 +259,16 @@ function InstantApp() {
   }, [searchQuery]);
 
   useEffect(() => {
-    fetch(`https://api.countapi.xyz/get/${COUNTER_NAMESPACE}/orders`)
-      .then((r) => r.json())
-      .then((d) => setOrderCount(d.value || 0))
-      .catch(() => {});
+    setOrderCount(loadJSON("instant_order_count", { n: 0 }).n || 0);
+    setSoldMap(loadJSON("instant_sold_map", {}));
 
-    Promise.all(
-      PRODUCTS.map((p) =>
-        Promise.all([
-          fetch(`https://api.countapi.xyz/get/${COUNTER_NAMESPACE}/p${p.id}_sum`).then((r) => r.json()).catch(() => ({ value: 0 })),
-          fetch(`https://api.countapi.xyz/get/${COUNTER_NAMESPACE}/p${p.id}_count`).then((r) => r.json()).catch(() => ({ value: 0 })),
-        ]).then(([sumRes, countRes]) => ({ id: p.id, sum: sumRes.value || 0, count: countRes.value || 0 }))
-      )
-    ).then((results) => {
-      const map = {};
-      results.forEach((r) => {
-        map[r.id] = { avg: r.count > 0 ? r.sum / r.count : 0, count: r.count, sum: r.sum };
-      });
-      setRatingsMap(map);
-    }).catch(() => {});
+    const savedRatings = loadJSON("instant_ratings_map", {});
+    const map = {};
+    Object.keys(savedRatings).forEach((id) => {
+      const { sum, count } = savedRatings[id];
+      map[id] = { sum, count, avg: count > 0 ? sum / count : 0 };
+    });
+    setRatingsMap(map);
   }, []);
 
   const filtered = useMemo(() => (category === "all" ? PRODUCTS : PRODUCTS.filter((p) => p.cat === category)), [category]);
@@ -291,19 +294,19 @@ function InstantApp() {
     const msg = `Hi INSTANT! New order from Hinganghat%0A%0A${lines}%0A%0AItems Total: ₹${total}%0ADelivery Fee: ₹${DELIVERY_FEE}%0AGrand Total: ₹${grandTotal}%0APayment: Cash on Delivery%0A%0AName: ${custName}%0APhone: ${custPhone}%0AAddress: ${custAddress}`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
 
-    fetch(`https://api.countapi.xyz/hit/${COUNTER_NAMESPACE}/orders`)
-      .then((r) => r.json())
-      .then((d) => {
-        const id = d.value || orderCount + 1;
-        setOrderCount(id);
-        setOrderId(id);
-        saveOrderToHistory(id, cart, grandTotal);
-      })
-      .catch(() => {
-        const id = orderCount + 1;
-        setOrderId(id);
-        saveOrderToHistory(id, cart, grandTotal);
-      });
+    const newOrderCount = orderCount + 1;
+    setOrderCount(newOrderCount);
+    saveJSON("instant_order_count", { n: newOrderCount });
+    setOrderId(newOrderCount);
+
+    setSoldMap((prev) => {
+      const next = { ...prev };
+      cart.forEach((p) => { next[p.id] = (next[p.id] || 0) + 1; });
+      saveJSON("instant_sold_map", next);
+      return next;
+    });
+
+    saveOrderToHistory(newOrderCount, cart, grandTotal);
 
     setOrderItems(cart);
     setOrderPlaced(true);
@@ -331,11 +334,6 @@ function InstantApp() {
     const rated = Object.entries(itemRatings).filter(([, v]) => v > 0);
     if (rated.length === 0) return;
 
-    rated.forEach(([id, stars]) => {
-      fetch(`https://api.countapi.xyz/update/${COUNTER_NAMESPACE}/p${id}_sum?amount=${stars}`).catch(() => {});
-      fetch(`https://api.countapi.xyz/update/${COUNTER_NAMESPACE}/p${id}_count?amount=1`).catch(() => {});
-    });
-
     setRatingsMap((prev) => {
       const next = { ...prev };
       rated.forEach(([id, stars]) => {
@@ -344,6 +342,9 @@ function InstantApp() {
         const count = existing.count + 1;
         next[id] = { sum, count, avg: sum / count };
       });
+      const toStore = {};
+      Object.keys(next).forEach((id) => { toStore[id] = { sum: next[id].sum, count: next[id].count }; });
+      saveJSON("instant_ratings_map", toStore);
       return next;
     });
 
@@ -490,7 +491,7 @@ function InstantApp() {
                     <span style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 15, color: INK }}>🔥 Today's Trending Fits</span>
                   </div>
                   <div className="flex gap-3 px-4 overflow-x-auto pb-2">
-                    {trending.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
+                    {trending.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} extraSold={soldMap[p.id]} />)}
                   </div>
                 </div>
               )}
@@ -502,7 +503,7 @@ function InstantApp() {
                     <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: GREEN, fontWeight: 700 }}>COLLEGE PICKS</span>
                   </div>
                   <div className="flex gap-3 px-4 overflow-x-auto pb-2">
-                    {under499.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
+                    {under499.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} extraSold={soldMap[p.id]} />)}
                   </div>
                 </div>
               )}
@@ -515,7 +516,7 @@ function InstantApp() {
                 </div>
                 {filtered.length > 0 ? (
                   <div className="grid grid-cols-2 gap-3">
-                    {filtered.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
+                    {filtered.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} extraSold={soldMap[p.id]} />)}
                   </div>
                 ) : (
                   <p className="py-8 text-center" style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK, opacity: 0.6 }}>No products in this category yet.</p>
@@ -543,7 +544,7 @@ function InstantApp() {
                 </p>
               ) : (
                 <div className="grid grid-cols-2 gap-3 pb-2">
-                  {searchResults.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} />)}
+                  {searchResults.map((p) => <ProductCard key={p.id} p={p} onAdd={addToCart} added={justAdded === p.id} rating={ratingsMap[p.id]} extraSold={soldMap[p.id]} />)}
                 </div>
               )}
             </div>
@@ -766,7 +767,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(<InstantApp />);
 </script>
 <script>
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
+  window.addEventListener("load", () => {
       navigator.serviceWorker.register("sw.js").catch(() => {});
     });
   }
