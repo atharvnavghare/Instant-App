@@ -146,6 +146,7 @@ function ProductDetailModal({ p, onClose, onAdd, rating, extraSold }) {
   const off = p.mrp && p.mrp > p.price ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : 0;
 
   function handleAdd() {
+    if (p.outOfStock) return;
     if (hasSizes && !selectedSize) {
       setSizeError(true);
       setTimeout(() => setSizeError(false), 1200);
@@ -222,9 +223,9 @@ function ProductDetailModal({ p, onClose, onAdd, rating, extraSold }) {
         </div>
       </div>
       <div className="shrink-0 px-4 py-3" style={{ borderTop: `1.5px solid ${INK}`, background: PAPER }}>
-        <button onClick={handleAdd} className="w-full flex items-center justify-center gap-1 transition-transform active:scale-95" style={{
-          background: INK, color: PAPER, fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, padding: "12px 0",
-        }}>+ ADD TO BAG — ₹{p.price}</button>
+        <button onClick={handleAdd} disabled={p.outOfStock} className="w-full flex items-center justify-center gap-1 transition-transform active:scale-95" style={{
+          background: p.outOfStock ? LINE : INK, color: p.outOfStock ? "#8a8578" : PAPER, fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, padding: "12px 0",
+        }}>{p.outOfStock ? "OUT OF STOCK" : `+ ADD TO BAG — ₹${p.price}`}</button>
       </div>
     </div>
   );
@@ -238,6 +239,7 @@ function ProductCard({ p, onAdd, added, rating, extraSold, onOpenDetail }) {
   const [sizeError, setSizeError] = useState(false);
 
   function handleAdd() {
+    if (p.outOfStock) return;
     if (hasSizes && !selectedSize) {
       setSizeError(true);
       setTimeout(() => setSizeError(false), 1200);
@@ -258,6 +260,14 @@ function ProductCard({ p, onAdd, added, rating, extraSold, onOpenDetail }) {
           <div className="absolute top-1.5 left-1.5 flex items-center gap-0.5" style={{
             background: INK, color: ORANGE, fontFamily: "'Space Mono', monospace", fontSize: 10, fontWeight: 700, padding: "2px 5px",
           }}>🔥 HOT</div>
+        )}
+        {p.outOfStock && (
+          <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(23,20,16,0.55)" }}>
+            <span style={{
+              background: PAPER, color: INK, fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 800, padding: "4px 10px",
+              transform: "rotate(-4deg)", border: `1.5px solid ${INK}`,
+            }}>OUT OF STOCK</span>
+          </div>
         )}
         <div className="absolute -bottom-2 left-2"><PriceTag value={p.price} /></div>
       </div>
@@ -290,9 +300,9 @@ function ProductCard({ p, onAdd, added, rating, extraSold, onOpenDetail }) {
             </div>
           </div>
         )}
-        <button onClick={handleAdd} className="mt-1 w-full flex items-center justify-center gap-1 transition-transform active:scale-95" style={{
-          background: added ? GREEN : INK, color: PAPER, fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, padding: "7px 0",
-        }}>{added ? "✓ ADDED" : "+ ADD"}</button>
+        <button onClick={handleAdd} disabled={p.outOfStock} className="mt-1 w-full flex items-center justify-center gap-1 transition-transform active:scale-95" style={{
+          background: p.outOfStock ? LINE : (added ? GREEN : INK), color: p.outOfStock ? "#8a8578" : PAPER, fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, padding: "7px 0",
+        }}>{p.outOfStock ? "OUT OF STOCK" : (added ? "✓ ADDED" : "+ ADD")}</button>
       </div>
     </div>
   );
