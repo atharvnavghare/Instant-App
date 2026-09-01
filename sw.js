@@ -1,5 +1,5 @@
 const CACHE_NAME = "instant-v2";
-const urlsToCache = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
+const urlsToCache = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./products.json"];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
