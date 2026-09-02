@@ -12,22 +12,19 @@
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-  import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
-
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
   const firebaseConfig = {
     apiKey: "AIzaSyDQfP7k5u5R-d6_rEQqNqU0RU_V6CK8xRE",
     authDomain: "instant-41fd1.firebaseapp.com",
     projectId: "instant-41fd1",
     storageBucket: "instant-41fd1.firebasestorage.app",
     messagingSenderId: "257137936905",
-    appId: "1:257137936905:web:9c9589d1076cf1ab08c6d8"
+    appId: "1:257137936905:web:9c9589d1076cf1ab08c6d8",
   };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  window.firebaseDB = { db, collection, onSnapshot };
+  firebase.initializeApp(firebaseConfig);
+  window.db = firebase.firestore();
 </script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
@@ -345,11 +342,18 @@ function InstantApp() {
   const [productsLoading, setProductsLoading] = useState(true);
 
   useEffect(() => {
-    fetch("./products.json", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((data) => setPRODUCTS(Array.isArray(data) ? data : []))
-      .catch(() => setPRODUCTS([]))
-      .finally(() => setProductsLoading(false));
+    const unsub = window.db.collection("products").onSnapshot(
+      (snap) => {
+        const list = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        setPRODUCTS(list);
+        setProductsLoading(false);
+      },
+      (err) => {
+        setPRODUCTS([]);
+        setProductsLoading(false);
+      }
+    );
+    return () => unsub();
   }, []);
 
   const [cart, setCart] = useState(() => {
