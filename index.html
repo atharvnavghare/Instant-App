@@ -199,7 +199,7 @@ function ProductDetailModal({ p, onClose, onAdd, rating, extraSold }) {
               </>
             )}
           </div>
-          <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: INK, opacity: 0.65 }}>Inclusive of all taxes. + ₹{DELIVERY_FEE} delivery fee at checkout.</span>
+          <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: INK, opacity: 0.65 }}>Inclusive of all taxes. <span style={{ color: GREEN, fontWeight: 700 }}>FREE DELIVERY</span> in Hinganghat.</span>
 
           <div className="flex items-center gap-3 py-1" style={{ borderTop: `1px dashed ${LINE}`, borderBottom: `1px dashed ${LINE}` }}>
             <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: GREEN, fontWeight: 700, padding: "6px 0" }}>● {soldToday} sold today</span>
@@ -334,7 +334,7 @@ function saveJSON(key, val) {
 }
 
 const COUNTER_NAMESPACE = "instant-hinganghat-app";
-const DELIVERY_FEE = 40;
+const DELIVERY_FEE = 0;
 
 function InstantApp() {
   const [category, setCategory] = useState("all");
@@ -520,7 +520,7 @@ function InstantApp() {
     }
     setFormError("");
     const lines = cart.map((p) => `- ${p.name}${p.selectedSize ? " (Size: " + p.selectedSize + ")" : ""} x${p.qty} (₹${p.price} each = ₹${p.price * p.qty})`).join("%0A");
-    const msg = `Hi INSTANT! New order from Hinganghat%0A%0A${lines}%0A%0AItems Total: ₹${total}%0ADelivery Fee: ₹${DELIVERY_FEE}%0AGrand Total: ₹${grandTotal}%0APayment: Cash on Delivery%0A%0AName: ${custName}%0APhone: ${custPhone}%0AAddress: ${custAddress}`;
+    const msg = `Hi INSTANT! New order from Hinganghat%0A%0A${lines}%0A%0AItems Total: ₹${total}%0ADelivery: FREE%0AGrand Total: ₹${grandTotal}%0APayment: Cash on Delivery%0A%0AName: ${custName}%0APhone: ${custPhone}%0AAddress: ${custAddress}`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
 
     const newOrderCount = orderCount + 1;
@@ -677,8 +677,7 @@ function InstantApp() {
               <span key={i} style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: GREEN }} className="flex items-center gap-8">
                 <span>🔥 LIVE IN HINGANGHAT</span>
                 <span style={{ color: ORANGE }}>● {orderCount} ORDERS PLACED TILL DATE</span>
-                <span style={{ color: PAPER }}>OVERSIZED TEE ₹399</span>
-                <span style={{ color: PAPER }}>BAGGY CARGO ₹699</span>
+                <span style={{ color: PAPER }}>🚚 FREE DELIVERY IN HINGANGHAT</span>
                 <span style={{ color: ORANGE }}>● CASH ON DELIVERY AVAILABLE</span>
               </span>
             ))}
@@ -900,8 +899,8 @@ function InstantApp() {
                         <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11.5, color: INK }}>₹{orderItems.reduce((s, p) => s + p.price * p.qty, 0)}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: INK, opacity: 0.7 }}>Delivery Fee</span>
-                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11.5, color: INK }}>₹{DELIVERY_FEE}</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: INK, opacity: 0.7 }}>Delivery</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11.5, color: GREEN, fontWeight: 700 }}>FREE</span>
                       </div>
                       <div className="flex items-center justify-between pt-1" style={{ borderTop: `1px dashed ${LINE}` }}>
                         <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK, fontWeight: 800 }}>Grand Total</span>
@@ -1007,8 +1006,8 @@ function InstantApp() {
                         <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK }}>₹{total}</span>
                       </div>
                       <div className="flex items-center justify-between mt-1 pb-2" style={{ borderBottom: `1px dashed ${LINE}` }}>
-                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: INK, opacity: 0.7 }}>Delivery Fee</span>
-                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: INK }}>₹{DELIVERY_FEE}</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: INK, opacity: 0.7 }}>Delivery</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: GREEN, fontWeight: 700 }}>FREE</span>
                       </div>
                       <div className="flex items-center justify-between mb-2 mt-1.5">
                         <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: INK }}>TOTAL</span>
